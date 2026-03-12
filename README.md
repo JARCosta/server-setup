@@ -4,7 +4,16 @@ Automated deployment scripts for setting up a clean Ubuntu Server to run the exp
 
 ## Quick Start
 
-From a fresh Ubuntu Server install, SSH in and run:
+From a fresh Ubuntu Server install:
+
+1. Log in once (password is fine the first time).
+2. From **your local machine**, copy your SSH key to the server:
+
+```bash
+ssh-copy-id user@server-ip
+```
+
+3. On the server, run:
 
 ```bash
 sudo apt install -y git
@@ -25,19 +34,7 @@ sudo ./setup.sh
 
 ## Post-Install Steps
 
-### 1. Set up SSH keys (from your local machine)
-
-```bash
-ssh-copy-id user@server-ip
-```
-
-Then disable password auth on the server:
-
-```bash
-sudo bash ~/server-setup/scripts/disable-password-auth.sh
-```
-
-### 2. Set up GitHub SSH (for private submodules)
+### 1. Set up GitHub SSH (for private submodules)
 
 ```bash
 bash ~/server-setup/scripts/setup-github-ssh.sh
@@ -45,14 +42,14 @@ bash ~/server-setup/scripts/setup-github-ssh.sh
 
 This generates an ed25519 key, shows you the public key to add to GitHub, then tests the connection.
 
-### 3. Clone credentials submodule
+### 2. Clone all submodules
 
 ```bash
 cd ~/experiments
 git submodule update --init --recursive
 ```
 
-### 4. Start the application
+### 3. Start the application
 
 ```bash
 exp start
@@ -98,7 +95,7 @@ server-setup/
     ├── 03-app.sh                     # App deployment
     ├── 04-services.sh                # Systemd services
     ├── 05-optional.sh                # Optional components
-    ├── disable-password-auth.sh      # Lock down SSH after key setup
+    ├── disable-password-auth.sh      # Legacy helper (enforces key-only SSH)
     └── setup-github-ssh.sh           # GitHub SSH key helper
 ```
 

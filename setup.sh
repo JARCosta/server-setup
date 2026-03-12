@@ -53,7 +53,15 @@ export SETUP_USER="${SUDO_USER:-$(whoami)}"
 export SETUP_HOME="$(eval echo ~$SETUP_USER)"
 export APP_DIR="${SETUP_HOME}/experiments"
 export VENV_DIR="${APP_DIR}/.venv"
-export REPO_URL="${REPO_URL:-https://github.com/JARCosta/2.Code.git}"
+export REPO_URL="${REPO_URL:-git@github.com:JARCosta/experiments.git}"
+
+# Require SSH key-based login to be set up for the setup user
+if ! [ -f "${SETUP_HOME}/.ssh/authorized_keys" ] || ! [ -s "${SETUP_HOME}/.ssh/authorized_keys" ]; then
+    err "No SSH public key found for ${SETUP_USER} at ${SETUP_HOME}/.ssh/authorized_keys."
+    err "Set up SSH keys from your local machine first, e.g.:"
+    err "  ssh-copy-id ${SETUP_USER}@<server-ip>"
+    exit 1
+fi
 
 log "Setup starting for user: $SETUP_USER"
 log "Home directory: $SETUP_HOME"
@@ -81,11 +89,9 @@ log "  App status:          sudo systemctl status experiments"
 log "  Update & restart:    sudo -u $SETUP_USER $APP_DIR/startup.sh"
 echo ""
 warn "MANUAL STEPS REMAINING:"
-warn "  1. Copy your SSH public key:  ssh-copy-id $SETUP_USER@<server-ip>"
-warn "  2. Set up Git SSH key for private submodules (credentials):"
-warn "       sudo -u $SETUP_USER ssh-keygen -t ed25519"
-warn "       # Add the public key to GitHub"
-warn "  3. Clone credentials submodule:"
-warn "       cd $APP_DIR && git submodule update --init credentials"
-warn "  4. (Optional) Install extras:  sudo bash $SCRIPT_DIR/scripts/05-optional.sh"
+warn "  1. Set up Git SSH key for private submodules (credentials, ocr, wheelchair_detector):"
+warn "       sudo -u $SETUP_USER bash $SCRIPT_DIR/scripts/setup-github-ssh.sh"
+warn "  2. Clone all submodules:"
+warn "       cd $APP_DIR && git submodule update --init --recursive"
+warn "  3. (Optional) Install extras:  sudo bash $SCRIPT_DIR/scripts/05-optional.sh"
 echo ""

@@ -42,16 +42,13 @@ cp "$SSHD_CONFIG" "$SSHD_BACKUP"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cp "$SCRIPT_DIR/config/sshd_hardened.conf" /etc/ssh/sshd_config.d/99-hardened.conf
 
-# Keep password auth enabled until user sets up SSH keys
-if ! [ -f "${SETUP_HOME}/.ssh/authorized_keys" ] || ! [ -s "${SETUP_HOME}/.ssh/authorized_keys" ]; then
-    warn "No SSH keys found — keeping password authentication enabled for now"
-    warn "After adding your key, run: sudo bash $SCRIPT_DIR/scripts/disable-password-auth.sh"
-else
-    sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config.d/99-hardened.conf
-    ok "SSH keys found — password authentication disabled"
-fi
+# At this point setup.sh has already enforced that authorized_keys exists and is non-empty,
+# so we always disable password authentication.
+sed -i 's/^PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config.d/99-hardened.conf || true
+echo "PasswordAuthentication no" >> /etc/ssh/sshd_config.d/99-hardened.conf
+ok "Password authentication disabled (SSH key login only)"
 
-systemctl restart sshd
+systemctl restart ssh || systemctl restart sshd
 
 # ── Firewall (UFW) ──────────────────────────────────────────
 log "Configuring firewall..."
