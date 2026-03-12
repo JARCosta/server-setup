@@ -1,0 +1,12 @@
+# Main application dependencies
+numpy
+matplotlib
+requests
+websocket-client
+flask
+pyngrok
+
+# BoostBot
+discord.py==2.4.0
+python-dotenv
+tabulate
