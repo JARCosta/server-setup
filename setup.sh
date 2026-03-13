@@ -51,9 +51,10 @@ fi
 # Detect the actual user (the one who ran sudo)
 export SETUP_USER="${SUDO_USER:-$(whoami)}"
 export SETUP_HOME="$(eval echo ~$SETUP_USER)"
-export APP_DIR="${SETUP_HOME}/experiments"
-export VENV_DIR="${APP_DIR}/.venv"
+export APP_DIR="${APP_DIR:-${SETUP_HOME}/experiments}"
+export VENV_DIR="${VENV_DIR:-${APP_DIR}/.venv}"
 export REPO_URL="${REPO_URL:-git@github.com:JARCosta/experiments.git}"
+export REPO_BRANCH="${REPO_BRANCH:-main}"
 
 # Require SSH key-based login to be set up for the setup user
 if ! [ -f "${SETUP_HOME}/.ssh/authorized_keys" ] || ! [ -s "${SETUP_HOME}/.ssh/authorized_keys" ]; then
@@ -67,6 +68,7 @@ log "Setup starting for user: $SETUP_USER"
 log "Home directory: $SETUP_HOME"
 log "Application directory: $APP_DIR"
 log "Repository: $REPO_URL"
+log "Branch: ${REPO_BRANCH}"
 echo ""
 
 # ── Run setup steps ────────────────────────────────────────

@@ -106,6 +106,7 @@ Override defaults by exporting environment variables before running `setup.sh`:
 ```bash
 export REPO_URL="https://github.com/YourUser/YourRepo.git"
 export APP_DIR="/opt/myapp"
+export REPO_BRANCH="dev/jar"         # optional: branch name (defaults to main)
 sudo -E ./setup.sh
 ```
 

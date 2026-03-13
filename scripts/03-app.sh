@@ -8,35 +8,19 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/scripts/common.sh"
 
 # ── Clone repository ────────────────────────────────────────
 if [ -d "$APP_DIR/.git" ]; then
-    log "Repository already exists at $APP_DIR, pulling latest..."
-    sudo -u "$SETUP_USER" bash -c "cd $APP_DIR && git fetch origin && git pull --ff-only"
+    log "Repository already exists at $APP_DIR, pulling latest for branch ${REPO_BRANCH}..."
+    sudo -u "$SETUP_USER" bash -c "cd $APP_DIR && git fetch origin && git checkout \"$REPO_BRANCH\" && git pull --ff-only origin \"$REPO_BRANCH\""
 else
-    log "Cloning repository to $APP_DIR..."
-    sudo -u "$SETUP_USER" git clone "$REPO_URL" "$APP_DIR"
+    log "Cloning repository branch ${REPO_BRANCH} to $APP_DIR..."
+    sudo -u "$SETUP_USER" git clone --branch "$REPO_BRANCH" --single-branch "$REPO_URL" "$APP_DIR"
 fi
 
-# ── Submodules (public ones only — credentials needs SSH key) ─
-log "Initializing public submodules..."
+# ── Submodules (public + private) ─────────────────────────────
+log "Initializing submodules (this may require GitHub SSH access)..."
 cd "$APP_DIR"
-sudo -u "$SETUP_USER" git submodule update --init BoostBot || warn "BoostBot submodule failed (may need SSH key)"
-
-# Private submodules require SSH key setup
-KEY_FILE="${SETUP_HOME}/.ssh/id_ed25519"
-if [ -f "$KEY_FILE" ]; then
-    log "Testing GitHub SSH access using $KEY_FILE..."
-    if sudo -u "$SETUP_USER" env HOME="$SETUP_HOME" ssh -i "$KEY_FILE" \
-           -o BatchMode=yes \
-           -o StrictHostKeyChecking=accept-new \
-           -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
-        log "GitHub SSH access confirmed, initializing all submodules..."
-        sudo -u "$SETUP_USER" git submodule update --init --recursive
-    else
-        warn "GitHub SSH test failed with $KEY_FILE — skipping private submodules (credentials, ocr, wheelchair_detector)"
-        warn "After fixing SSH, run: cd $APP_DIR && git submodule update --init --recursive"
-    fi
-else
-    warn "No SSH key found at $KEY_FILE — skipping private submodules (credentials, ocr, wheelchair_detector)"
-    warn "Set up SSH and run: cd $APP_DIR && git submodule update --init --recursive"
+if ! sudo -u "$SETUP_USER" env HOME="$SETUP_HOME" git submodule update --init --recursive; then
+    warn "Submodule initialization failed (likely missing GitHub SSH access for private repos)"
+    warn "After fixing SSH, run: cd $APP_DIR && git submodule update --init --recursive"
 fi
 
 # ── Create virtual environment ──────────────────────────────
