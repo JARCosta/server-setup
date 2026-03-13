@@ -26,7 +26,10 @@ chmod 600 "$KEY_FILE"
 
 echo ""
 echo "Testing GitHub SSH connection using $KEY_FILE..."
-if ssh -i "$KEY_FILE" -o BatchMode=yes -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+if ssh -i "$KEY_FILE" \
+       -o BatchMode=yes \
+       -o StrictHostKeyChecking=accept-new \
+       -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
     echo "GitHub SSH access confirmed!"
     echo ""
     echo "Now initialize all submodules:"

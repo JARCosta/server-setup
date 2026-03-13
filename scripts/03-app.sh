@@ -24,7 +24,10 @@ sudo -u "$SETUP_USER" git submodule update --init BoostBot || warn "BoostBot sub
 KEY_FILE="${SETUP_HOME}/.ssh/id_ed25519"
 if [ -f "$KEY_FILE" ]; then
     log "Testing GitHub SSH access using $KEY_FILE..."
-    if sudo -u "$SETUP_USER" ssh -i "$KEY_FILE" -o BatchMode=yes -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+    if sudo -u "$SETUP_USER" env HOME="$SETUP_HOME" ssh -i "$KEY_FILE" \
+           -o BatchMode=yes \
+           -o StrictHostKeyChecking=accept-new \
+           -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
         log "GitHub SSH access confirmed, initializing all submodules..."
         sudo -u "$SETUP_USER" git submodule update --init --recursive
     else
