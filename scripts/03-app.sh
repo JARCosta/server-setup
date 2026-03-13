@@ -21,12 +21,19 @@ cd "$APP_DIR"
 sudo -u "$SETUP_USER" git submodule update --init BoostBot || warn "BoostBot submodule failed (may need SSH key)"
 
 # Private submodules require SSH key setup
-if sudo -u "$SETUP_USER" ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
-    log "GitHub SSH access confirmed, initializing all submodules..."
-    sudo -u "$SETUP_USER" git submodule update --init --recursive
+KEY_FILE="${SETUP_HOME}/.ssh/id_ed25519"
+if [ -f "$KEY_FILE" ]; then
+    log "Testing GitHub SSH access using $KEY_FILE..."
+    if sudo -u "$SETUP_USER" ssh -i "$KEY_FILE" -o BatchMode=yes -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+        log "GitHub SSH access confirmed, initializing all submodules..."
+        sudo -u "$SETUP_USER" git submodule update --init --recursive
+    else
+        warn "GitHub SSH test failed with $KEY_FILE — skipping private submodules (credentials, ocr, wheelchair_detector)"
+        warn "After fixing SSH, run: cd $APP_DIR && git submodule update --init --recursive"
+    fi
 else
-    warn "GitHub SSH not configured — skipping private submodules (credentials, ocr, wheelchair_detector)"
-    warn "Set up SSH key and run: cd $APP_DIR && git submodule update --init --recursive"
+    warn "No SSH key found at $KEY_FILE — skipping private submodules (credentials, ocr, wheelchair_detector)"
+    warn "Set up SSH and run: cd $APP_DIR && git submodule update --init --recursive"
 fi
 
 # ── Create virtual environment ──────────────────────────────
