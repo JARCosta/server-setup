@@ -106,7 +106,7 @@ case "${1:-}" in
     restart) sudo systemctl restart experiments ;;
     status)  sudo systemctl status experiments ;;
     logs)    sudo journalctl -u experiments -f --no-hostname ;;
-    update)  sudo systemctl start experiments-update ;;
+update)  sudo systemctl start experiments-update ;;
     *)
         echo "Usage: exp {start|stop|restart|status|logs|update}"
         echo ""
@@ -115,7 +115,7 @@ case "${1:-}" in
         echo "  restart  Restart the application"
         echo "  status   Show service status"
         echo "  logs     Follow live logs"
-        echo "  update   Pull latest code and restart"
+echo "  update   Pull latest code and restart"
         ;;
 esac
 MGMT
