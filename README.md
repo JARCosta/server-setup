@@ -34,22 +34,7 @@ sudo ./setup.sh
 
 ## Post-Install Steps
 
-### 1. Set up GitHub SSH (for private submodules)
-
-```bash
-bash ~/server-setup/scripts/setup-github-ssh.sh
-```
-
-This generates an ed25519 key, shows you the public key to add to GitHub, then tests the connection.
-
-### 2. Clone all submodules
-
-```bash
-cd ~/experiments
-git submodule update --init --recursive
-```
-
-### 3. Start the application
+### 1. Start the application
 
 ```bash
 exp start

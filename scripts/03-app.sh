@@ -4,7 +4,8 @@
 #
 set -euo pipefail
 
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/scripts/common.sh"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT_DIR/scripts/common.sh"
 
 # ── Clone repository ────────────────────────────────────────
 if [ -d "$APP_DIR/.git" ]; then
@@ -15,13 +16,14 @@ else
     sudo -u "$SETUP_USER" git clone --branch "$REPO_BRANCH" --single-branch "$REPO_URL" "$APP_DIR"
 fi
 
-# ── Submodules (public + private) ─────────────────────────────
-log "Initializing submodules (this may require GitHub SSH access)..."
+# ── Ensure GitHub SSH for private submodules ────────────────
+log "Ensuring GitHub SSH access for private GitHub repositories..."
+sudo -u "$SETUP_USER" env HOME="$SETUP_HOME" bash "$ROOT_DIR/scripts/setup-github-ssh.sh"
+
+# ── Submodules (public + private) ───────────────────────────
+log "Initializing submodules (public + private) recursively..."
 cd "$APP_DIR"
-if ! sudo -u "$SETUP_USER" env HOME="$SETUP_HOME" git submodule update --init --recursive; then
-    warn "Submodule initialization failed (likely missing GitHub SSH access for private repos)"
-    warn "After fixing SSH, run: cd $APP_DIR && git submodule update --init --recursive"
-fi
+sudo -u "$SETUP_USER" env HOME="$SETUP_HOME" git submodule update --init --recursive
 
 # ── Create virtual environment ──────────────────────────────
 log "Creating Python virtual environment..."
@@ -29,7 +31,7 @@ sudo -u "$SETUP_USER" python3 -m venv "$VENV_DIR"
 
 # ── Install pip dependencies ────────────────────────────────
 log "Installing Python dependencies..."
-REQUIREMENTS_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/config/requirements.txt"
+REQUIREMENTS_FILE="$ROOT_DIR/config/requirements.txt"
 sudo -u "$SETUP_USER" "$VENV_DIR/bin/pip" install --upgrade pip
 sudo -u "$SETUP_USER" "$VENV_DIR/bin/pip" install -r "$REQUIREMENTS_FILE"
 
