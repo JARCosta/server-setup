@@ -26,10 +26,17 @@ chmod 600 "$KEY_FILE"
 while true; do
     echo ""
     echo "Testing GitHub SSH connection using $KEY_FILE..."
-    if ssh -i "$KEY_FILE" \
-           -o BatchMode=yes \
-           -o StrictHostKeyChecking=accept-new \
-           -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+    # GitHub prints "successfully authenticated" but still exits with status 1
+    # because it doesn't provide an interactive shell. With `set -o pipefail`
+    # enabled, that non-zero status would make the pipeline fail even when
+    # authentication is actually working. Capture the output and ignore the
+    # SSH exit code; treat the presence of the success message as success.
+    ssh_output="$(ssh -i "$KEY_FILE" \
+                        -o BatchMode=yes \
+                        -o StrictHostKeyChecking=accept-new \
+                        -T git@github.com 2>&1 || true)"
+    echo "$ssh_output"
+    if printf '%s\n' "$ssh_output" | grep -q "successfully authenticated"; then
         echo ""
         echo "GitHub SSH access confirmed!"
         echo "You are ready to clone private repositories and submodules."

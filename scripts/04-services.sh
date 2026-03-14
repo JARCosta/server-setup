@@ -46,40 +46,25 @@ PrivateTmp=true
 WantedBy=multi-user.target
 EOF
 
-# ── Auto-update timer (daily git pull + restart) ────────────
-log "Creating daily update timer..."
+# ── Daily system reboot (06:10) ──────────────────────────────
+log "Creating daily reboot timer (06:10)..."
 
-cat > /etc/systemd/system/experiments-update.service << EOF
+cat > /etc/systemd/system/daily-reboot.service << EOF
 [Unit]
-Description=Update experiments from git and restart
-After=network-online.target
+Description=Daily system reboot
 
 [Service]
 Type=oneshot
-User=${SETUP_USER}
-WorkingDirectory=${APP_DIR}
-
-ExecStart=/usr/bin/bash -c '\
-    cd ${APP_DIR} && \
-    if ! git diff-index --quiet HEAD --; then \
-        git stash push -m "auto-pre-restart-\$(date +%%F-%%H%%M%%S)"; \
-    fi && \
-    git fetch origin && \
-    git pull --ff-only && \
-    cd ${APP_DIR}/credentials && \
-    git fetch origin && \
-    git pull --ff-only'
-ExecStartPost=/usr/bin/systemctl restart experiments.service
+ExecStart=/usr/sbin/reboot
 EOF
 
-cat > /etc/systemd/system/experiments-update.timer << EOF
+cat > /etc/systemd/system/daily-reboot.timer << EOF
 [Unit]
-Description=Daily update check for experiments
+Description=Run daily system reboot at 06:10
 
 [Timer]
-OnCalendar=*-*-* 06:00:00
+OnCalendar=*-*-* 06:10:00
 Persistent=true
-RandomizedDelaySec=300
 
 [Install]
 WantedBy=timers.target
@@ -89,8 +74,7 @@ EOF
 log "Enabling services..."
 systemctl daemon-reload
 systemctl enable experiments.service
-systemctl enable experiments-update.timer
-systemctl start experiments-update.timer
+systemctl enable --now daily-reboot.timer
 
 # Don't auto-start the main service yet — credentials may not be set up
 warn "Service 'experiments' is enabled but NOT started (credentials may not be ready)"
@@ -106,16 +90,14 @@ case "${1:-}" in
     restart) sudo systemctl restart experiments ;;
     status)  sudo systemctl status experiments ;;
     logs)    sudo journalctl -u experiments -f --no-hostname ;;
-update)  sudo systemctl start experiments-update ;;
     *)
-        echo "Usage: exp {start|stop|restart|status|logs|update}"
+        echo "Usage: exp {start|stop|restart|status|logs}"
         echo ""
         echo "  start    Start the application"
         echo "  stop     Stop the application"
         echo "  restart  Restart the application"
         echo "  status   Show service status"
         echo "  logs     Follow live logs"
-echo "  update   Pull latest code and restart"
         ;;
 esac
 MGMT
