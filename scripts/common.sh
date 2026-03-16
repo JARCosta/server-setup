@@ -17,6 +17,6 @@ err()  { echo -e "${RED}[✗]${NC} $*" | tee -a "$LOG_FILE"; }
 
 export SETUP_USER="${SETUP_USER:-$(whoami)}"
 export SETUP_HOME="${SETUP_HOME:-$(eval echo ~$SETUP_USER)}"
-export APP_DIR="${APP_DIR:-${SETUP_HOME}/experiments}"
+export APP_DIR="${APP_DIR:-${SETUP_HOME}/autolab}"
 export VENV_DIR="${VENV_DIR:-${APP_DIR}/.venv}"
-export REPO_URL="${REPO_URL:-git@github.com:JARCosta/experiments.git}"
+export REPO_URL="${REPO_URL:-git@github.com:JARCosta/autolab.git}"

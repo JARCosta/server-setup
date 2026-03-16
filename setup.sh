@@ -51,9 +51,9 @@ fi
 # Detect the actual user (the one who ran sudo)
 export SETUP_USER="${SUDO_USER:-$(whoami)}"
 export SETUP_HOME="$(eval echo ~$SETUP_USER)"
-export APP_DIR="${APP_DIR:-${SETUP_HOME}/experiments}"
+export APP_DIR="${APP_DIR:-${SETUP_HOME}/autolab}"
 export VENV_DIR="${VENV_DIR:-${APP_DIR}/.venv}"
-export REPO_URL="${REPO_URL:-git@github.com:JARCosta/experiments.git}"
+export REPO_URL="${REPO_URL:-git@github.com:JARCosta/autolab.git}"
 export REPO_BRANCH="${REPO_BRANCH:-main}"
 
 # Require SSH key-based login to be set up for the setup user
@@ -75,6 +75,18 @@ echo ""
 run_step "01-system.sh"   "System packages & hardening"
 run_step "02-python.sh"   "Python environment"
 run_step "03-app.sh"      "Application deployment"
+
+# Optional: install Docker automatically if missing (so autolab.service can run)
+if ! command -v docker >/dev/null 2>&1; then
+    warn "Docker not detected; installing via optional docker component..."
+    bash "$SCRIPT_DIR/scripts/05-optional.sh" docker || {
+        err "Docker installation failed. You can retry later with:"
+        err "  sudo bash $SCRIPT_DIR/scripts/05-optional.sh docker"
+    }
+else
+    ok "Docker already installed"
+fi
+
 run_step "04-services.sh" "Systemd services"
 
 echo ""
@@ -85,15 +97,9 @@ echo ""
 log "Quick reference:"
 log "  SSH into server:     ssh $SETUP_USER@<server-ip>"
 log "  App directory:       $APP_DIR"
-log "  View app logs:       sudo journalctl -u experiments -f"
-log "  Restart app:         sudo systemctl restart experiments"
-log "  App status:          sudo systemctl status experiments"
-log "  Update & restart:    sudo -u $SETUP_USER $APP_DIR/startup.sh"
+log "  View app logs:       sudo journalctl -u autolab -f"
+log "  Restart app:         sudo systemctl restart autolab"
+log "  App status:          sudo systemctl status autolab"
+log "  Update & restart:    sudo systemctl restart autolab"
 echo ""
-warn "MANUAL STEPS REMAINING:"
-warn "  1. Set up Git SSH key for private submodules (credentials, ocr, wheelchair_detector):"
-warn "       sudo -u $SETUP_USER bash $SCRIPT_DIR/scripts/setup-github-ssh.sh"
-warn "  2. Clone all submodules:"
-warn "       cd $APP_DIR && git submodule update --init --recursive"
-warn "  3. (Optional) Install extras:  sudo bash $SCRIPT_DIR/scripts/05-optional.sh"
-echo ""
+

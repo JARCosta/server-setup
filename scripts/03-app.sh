@@ -25,30 +25,4 @@ log "Initializing submodules (public + private) recursively..."
 cd "$APP_DIR"
 sudo -u "$SETUP_USER" env HOME="$SETUP_HOME" git submodule update --init --recursive
 
-# ── Create virtual environment ──────────────────────────────
-log "Creating Python virtual environment..."
-sudo -u "$SETUP_USER" python3 -m venv "$VENV_DIR"
-
-# ── Install pip dependencies ────────────────────────────────
-log "Installing Python dependencies..."
-REQUIREMENTS_FILE="$ROOT_DIR/config/requirements.txt"
-sudo -u "$SETUP_USER" "$VENV_DIR/bin/pip" install --upgrade pip
-sudo -u "$SETUP_USER" "$VENV_DIR/bin/pip" install -r "$REQUIREMENTS_FILE"
-
-# Install submodule-specific requirements if they exist
-for subdir in BoostBot ocr wheelchair_detector; do
-    if [ -f "$APP_DIR/$subdir/requirements.txt" ]; then
-        log "Installing $subdir dependencies..."
-        sudo -u "$SETUP_USER" "$VENV_DIR/bin/pip" install -r "$APP_DIR/$subdir/requirements.txt" || warn "$subdir deps install had issues"
-    fi
-done
-
-# ── Create resource directories ─────────────────────────────
-log "Creating resource directories..."
-sudo -u "$SETUP_USER" mkdir -p "$APP_DIR/telegramBot/resources"
-sudo -u "$SETUP_USER" mkdir -p "$APP_DIR/streamElements/resources"
-
-# ── Ensure startup.sh is executable ────────────────────────
-chmod +x "$APP_DIR/startup.sh" 2>/dev/null || true
-
-ok "Application deployed to $APP_DIR"
+ok "Application repository deployed to $APP_DIR (Dockerized autolab stack)"
