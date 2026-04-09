@@ -1,0 +1,6 @@
+[Unit]
+Description=Daily system reboot
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/reboot

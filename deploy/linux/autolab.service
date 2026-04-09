@@ -1,0 +1,31 @@
+[Unit]
+Description=Autolab - Twitch Bettor, Telegram Bot, Discord Bot (Docker)
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Service]
+Type=simple
+User=__SETUP_USER__
+Group=__SETUP_USER__
+WorkingDirectory=__WORKDIR__
+
+ExecStartPre=/usr/bin/bash -c 'cd __WORKDIR__ && git fetch origin && git pull --ff-only || true'
+ExecStart=/usr/bin/docker compose up --build
+ExecStop=/usr/bin/docker compose down
+
+Restart=on-failure
+RestartSec=30
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=autolab
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=__WORKDIR__
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

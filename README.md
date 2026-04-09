@@ -29,28 +29,39 @@ sudo ./setup.sh
 |------|--------|-------------|
 | 1 | `01-system.sh` | System update, essential packages, SSH hardening, UFW firewall, fail2ban, timezone, swap, auto-updates |
 | 2 | `02-python.sh` | Python 3.12 from deadsnakes PPA, dev headers, system libs |
-| 3 | `03-app.sh` | Clone repo to `~/experiments`, submodules, venv, pip install |
-| 4 | `04-services.sh` | Systemd service with auto-restart, daily update timer, `exp` management command |
+| 3 | `03-app.sh` | Clone autolab repo to `~/autolab`, submodules, venv, pip install |
+| 4 | `04-services.sh` | Systemd units `autolab` + `autolab-node`, daily reboot timer, `autolab` CLI |
 
 ## Post-Install Steps
 
 ### 1. Start the application
 
 ```bash
-exp start
+autolab start
 ```
 
 ## Management Commands
 
-The `exp` utility is installed to `/usr/local/bin/exp`:
+The `autolab` helper is installed to `/usr/local/bin/autolab`:
 
 ```bash
-exp start     # Start the application
-exp stop      # Stop the application
-exp restart   # Restart the application
-exp status    # Show service status
-exp logs      # Follow live logs (journalctl)
-exp update    # Git pull and restart
+# Main Autolab stack (Docker Compose, unit: autolab)
+autolab start
+autolab stop
+autolab restart
+autolab status
+autolab logs          # last journal lines (pull/build/systemd) then compose -f, or journal -f if stack down
+autolab journal       # systemd journal only
+
+# Optional env: AUTOLAB_LOG_TAIL=1000  AUTOLAB_JOURNAL_BOOTSTRAP=200  autolab logs
+# Hardware push node (Docker, unit: autolab-node — same as main: git pull + docker build on each start/restart)
+autolab node start
+autolab node stop
+autolab node restart
+autolab node status
+autolab node logs   # journal bootstrap then docker logs -f, or journal -f if container down
+autolab node journal
+# Legacy alias: `autolab client …` does the same as `autolab node …`.
 ```
 
 ## Optional Components
@@ -70,6 +81,8 @@ sudo bash ~/server-setup/scripts/05-optional.sh all         # Everything
 ```
 server-setup/
 ├── setup.sh                          # Main entry point (run as root)
+├── deploy/
+│   └── linux/                        # systemd unit templates (__WORKDIR__, __SETUP_USER__)
 ├── config/
 │   ├── requirements.txt              # Python dependencies
 │   └── sshd_hardened.conf            # SSH hardening config
@@ -105,8 +118,14 @@ sudo -E ./setup.sh
 ## Logs
 
 ```bash
-# Application logs
-sudo journalctl -u experiments -f
+# Container streams (colors, like docker compose logs -f)
+autolab logs
+autolab node logs
+
+# Or systemd journal only
+autolab journal
+sudo journalctl -u autolab -f
+sudo journalctl -u autolab-node -f
 
 # Setup log
 cat /var/log/server-setup.log

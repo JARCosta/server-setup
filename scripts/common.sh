@@ -15,7 +15,8 @@ ok()   { echo -e "${GREEN}[✓]${NC} $*" | tee -a "$LOG_FILE"; }
 warn() { echo -e "${YELLOW}[!]${NC} $*" | tee -a "$LOG_FILE"; }
 err()  { echo -e "${RED}[✗]${NC} $*" | tee -a "$LOG_FILE"; }
 
-export SETUP_USER="${SETUP_USER:-$(whoami)}"
+# When invoked via sudo, prefer the real user (matches setup.sh); plain root login uses whoami.
+export SETUP_USER="${SETUP_USER:-${SUDO_USER:-$(whoami)}}"
 export SETUP_HOME="${SETUP_HOME:-$(eval echo ~$SETUP_USER)}"
 export APP_DIR="${APP_DIR:-${SETUP_HOME}/autolab}"
 export VENV_DIR="${VENV_DIR:-${APP_DIR}/.venv}"

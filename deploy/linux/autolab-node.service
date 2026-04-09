@@ -1,0 +1,33 @@
+[Unit]
+Description=Autolab hardware push node (Docker)
+After=network-online.target docker.service
+Wants=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Service]
+Type=simple
+User=__SETUP_USER__
+Group=__SETUP_USER__
+WorkingDirectory=__WORKDIR__
+
+# Same idea as autolab.service: pull latest node repo, rebuild image, then run.
+ExecStartPre=/usr/bin/bash -c 'cd __WORKDIR__ && git fetch origin && git pull --ff-only || true'
+ExecStartPre=/usr/bin/bash -c 'cd __WORKDIR__ && docker build -t autolab-node:latest .'
+ExecStart=/usr/bin/bash -lc 'docker run --rm --name autolab-node --env-file __WORKDIR__/.env -p 8765:8765 autolab-node:latest'
+ExecStop=/usr/bin/bash -lc 'docker stop autolab-node || true'
+
+Restart=on-failure
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=autolab-node
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=__WORKDIR__
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
