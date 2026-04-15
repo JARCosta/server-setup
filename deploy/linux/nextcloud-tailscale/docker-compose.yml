@@ -1,0 +1,89 @@
+# Nextcloud + MariaDB + Redis, reachable only via Tailscale (sidecar pattern).
+# Docs: https://tailscale.com/docs/features/containers/docker/how-to/connect-docker-container
+#
+# After `docker compose up -d`, open http://nextcloud (MagicDNS) or http://<tailscale-ip>
+# from a machine on your tailnet. Create an admin user on first visit.
+#
+# Copy .env.example to .env and set secrets + TS_AUTHKEY before starting.
+
+networks:
+  internal:
+    driver: bridge
+
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    hostname: nextcloud
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+      # Optional: tag in Tailscale ACLs (https://tailscale.com/docs/features/access-control/tags)
+      # - TS_EXTRA_ARGS=--advertise-tags=tag:container
+    volumes:
+      - tailscale_state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      - internal
+    restart: unless-stopped
+
+  nextcloud:
+    image: nextcloud:apache
+    network_mode: service:tailscale
+    depends_on:
+      tailscale:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - nextcloud_data:/var/www/html
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - REDIS_HOST=redis
+      # Match Tailscale hostname; add more (space-separated) if you use full MagicDNS names.
+      - NEXTCLOUD_TRUSTED_DOMAINS=nextcloud localhost 127.0.0.1
+    restart: unless-stopped
+
+  db:
+    image: mariadb:11.4
+    # Nextcloud + MariaDB 11.4+: https://docs.nextcloud.com/server/latest/admin_manual/installation/server_tuning.html
+    command: >-
+      --transaction-isolation=READ-COMMITTED
+      --binlog-format=ROW
+      --innodb-read-only-compressed=OFF
+    environment:
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=nextcloud
+      - MARIADB_USER=nextcloud
+      - MARIADB_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - internal
+    restart: unless-stopped
+
+volumes:
+  tailscale_state:
+  nextcloud_data:
+  mariadb_data:
