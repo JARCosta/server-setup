@@ -27,7 +27,14 @@ case "${1:-}" in
             echo "---- journal: last $boot lines (systemd, git pull, docker build/compose driver) ----"
             sudo journalctl -u autolab -n "$boot" --no-pager --no-hostname || true
             if docker compose ps --status running -q 2>/dev/null | grep -q .; then
-                echo "---- docker compose logs -f (containers; tail $tail) ----"
+                # Name every running compose service so logs are multiplexed live for
+                # the whole project (same idea as `docker logs` on each container).
+                mapfile -t _autolab_compose_svcs < <(docker compose ps --services --status running 2>/dev/null | sed '/^$/d')
+                if ((${#_autolab_compose_svcs[@]})); then
+                    echo "---- docker compose logs -f (${#_autolab_compose_svcs[@]} service(s): ${_autolab_compose_svcs[*]}; tail $tail) ----"
+                    exec docker compose logs -f --tail "$tail" "${_autolab_compose_svcs[@]}"
+                fi
+                echo "---- docker compose logs -f (all; tail $tail) ----"
                 exec docker compose logs -f --tail "$tail"
             else
                 echo "---- no running compose services; following journal (Ctrl+C to stop) ----"

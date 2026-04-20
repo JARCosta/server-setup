@@ -6,14 +6,19 @@ StartLimitBurst=5
 StartLimitIntervalSec=300
 
 [Service]
-Type=simple
+# start.sh runs `docker compose up --build -d`; the CLI exits after containers
+# are up so journal has build/start output only (not live app logs — use autolab logs).
+Type=oneshot
+RemainAfterExit=yes
 User=__SETUP_USER__
 Group=__SETUP_USER__
 WorkingDirectory=__WORKDIR__
 
 ExecStartPre=/usr/bin/bash -c 'cd __WORKDIR__ && git fetch origin && git pull --ff-only || true'
-ExecStart=/usr/bin/docker compose up --build
-ExecStop=/usr/bin/docker compose down
+# scripts/start.sh reads data/modules.json and starts only the enabled
+# docker-compose profiles (autolab-web always runs, the rest are gated).
+ExecStart=/usr/bin/bash __WORKDIR__/scripts/start.sh
+ExecStop=/usr/bin/bash __WORKDIR__/scripts/stop.sh
 
 Restart=on-failure
 RestartSec=30

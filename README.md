@@ -49,11 +49,13 @@ The `autolab` helper is installed to `/usr/local/bin/autolab`:
 autolab start
 autolab stop
 autolab restart
-autolab status
-autolab logs          # last journal lines (pull/build/systemd) then compose -f, or journal -f if stack down
+autolab status          # may show `active (exited)` — normal: compose was started with `-d` and the unit stays “up” until stop
+autolab logs          # journal: git pull + image build + container start only; then live `docker compose logs -f` for runtime
 autolab journal       # systemd journal only
 
 # Optional env: AUTOLAB_LOG_TAIL=1000  AUTOLAB_JOURNAL_BOOTSTRAP=200  autolab logs
+# Manual equivalent from ~/autolab (lists running services, then follows all):
+#   docker compose ps --services --status running | xargs -r docker compose logs -f --tail 500
 # Hardware push node (Docker, unit: autolab-node — same as main: git pull + docker build on each start/restart)
 autolab node start
 autolab node stop
@@ -108,12 +110,24 @@ export REPO_BRANCH="dev/jar"         # optional: branch name (defaults to main)
 sudo -E ./setup.sh
 ```
 
+## Module on/off
+
+Autolab now runs as four docker-compose services (`autolab-web`,
+`autolab-bettors`, `autolab-discord`, `autolab-wallapop`). The `autolab` unit
+calls `scripts/start.sh` from the autolab repo, which reads
+`data/modules.json` and starts only the enabled profiles.
+
+Toggle modules from the home page (top-right of each card) and click
+**Restart now**, or run `autolab restart` after editing `data/modules.json`
+manually. `autolab-web` always runs (it hosts the toggle UI and Telegram
+webhook).
+
 ## Firewall Ports
 
 | Port | Service |
 |------|---------|
 | 22 | SSH |
-| 5000 | Flask / Telegram webhook |
+| 5000 | Flask / Telegram webhook (`autolab-web`) |
 
 ## Logs
 
