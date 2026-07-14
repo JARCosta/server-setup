@@ -1,7 +1,7 @@
 [Unit]
 Description=Autolab - Twitch Bettor, Telegram Bot, Discord Bot (Docker)
-After=network-online.target
-Wants=network-online.target
+After=network-online.target docker.service
+Wants=network-online.target docker.service
 StartLimitBurst=5
 StartLimitIntervalSec=300
 
@@ -22,6 +22,9 @@ ExecStop=/usr/bin/bash __WORKDIR__/scripts/stop.sh
 
 Restart=on-failure
 RestartSec=30
+# Default TimeoutStartSec (~90s) kills ExecStart while Docker pulls large images
+# (e.g. Nextcloud + MariaDB). Disable the start timeout for this oneshot unit.
+TimeoutStartSec=0
 
 StandardOutput=journal
 StandardError=journal

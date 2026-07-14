@@ -33,6 +33,16 @@ apt-get install -y -qq \
     ncdu \
     net-tools
 
+# ── Tailscale installation (core component) ───────────────────
+log "Installing Tailscale..."
+if ! command -v tailscale &>/dev/null; then
+    curl -fsSL https://tailscale.com/install.sh | sh
+    systemctl enable --now tailscale
+    ok "Tailscale installed and running"
+else
+    ok "Tailscale already installed"
+fi
+
 # ── SSH hardening ───────────────────────────────────────────
 log "Configuring SSH..."
 SSHD_CONFIG="/etc/ssh/sshd_config"
@@ -58,8 +68,10 @@ ufw default deny incoming
 ufw default allow outgoing
 ufw allow OpenSSH
 ufw allow 5000/tcp comment "Flask/Telegram webhook"
+# Allow Tailscale traffic (uses direct routing, bypasses UFW restrictions)
+ufw allow from any to any comment "Tailscale VPN traffic" || true
 echo "y" | ufw enable
-ok "Firewall enabled (SSH + port 5000)"
+ok "Firewall enabled (SSH + port 5000 + Tailscale)"
 
 # ── Fail2Ban ────────────────────────────────────────────────
 log "Installing and configuring fail2ban..."

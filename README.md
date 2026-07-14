@@ -27,10 +27,47 @@ sudo ./setup.sh
 
 | Step | Script | What it does |
 |------|--------|-------------|
-| 1 | `01-system.sh` | System update, essential packages, SSH hardening, UFW firewall, fail2ban, timezone, swap, auto-updates |
+| 1 | `01-system.sh` | System update, essential packages, **Tailscale VPN**, SSH hardening, UFW firewall, fail2ban, timezone, swap, auto-updates |
 | 2 | `02-python.sh` | Python 3.12 from deadsnakes PPA, dev headers, system libs |
 | 3 | `03-app.sh` | Clone autolab repo to `~/autolab`, submodules, venv, pip install |
 | 4 | `04-services.sh` | Systemd units `autolab` + `autolab-node`, daily reboot timer, `autolab` CLI |
+
+## Tailscale Network Access
+
+**Tailscale is now a core component** - it provides secure encrypted network access to your server.
+
+### Connecting via Tailscale
+
+1. **Login to Tailscale** on your local machine:
+   ```bash
+   tailscale login
+   ```
+
+2. **Connect to server** using Tailscale hostname (no public IP needed):
+   ```bash
+   ssh $USER@autolab
+   ```
+
+3. **Verify connection**:
+   ```bash
+   tailscale status
+   ```
+
+### Security Model
+
+- **External access**: SSH key-only, no passwords (fail2ban protection)
+- **Tailscale access**: Encrypted VPN tunnel (bypasses UFW restrictions)
+- **Webapp**: Port 5000 accessible via Tailscale or LAN
+
+**What's protected:**
+- ✅ Brute force attacks (fail2ban, MaxAuthTries 3)
+- ✅ Password authentication (disabled)
+- ✅ Root login (disabled)
+- ✅ Unnecessary services (X11 forwarding disabled)
+
+**What Tailscale bypasses:**
+- ✅ UFW incoming firewall rules
+- ✅ SSH port restrictions (same encrypted network)
 
 ## Post-Install Steps
 
@@ -87,14 +124,14 @@ server-setup/
 │   └── linux/                        # systemd unit templates (__WORKDIR__, __SETUP_USER__)
 ├── config/
 │   ├── requirements.txt              # Python dependencies
-│   └── sshd_hardened.conf            # SSH hardening config
+│   └── sshd_hardened.conf            # SSH hardening config (Tailscale-compatible)
 └── scripts/
     ├── common.sh                     # Shared variables and helpers
-    ├── 01-system.sh                  # System packages & hardening
+    ├── 01-system.sh                  # System packages, **Tailscale**, SSH hardening, firewall, fail2ban
     ├── 02-python.sh                  # Python installation
     ├── 03-app.sh                     # App deployment
     ├── 04-services.sh                # Systemd services
-    ├── 05-optional.sh                # Optional components
+    ├── 05-optional.sh                # Optional components (ngrok, tesseract, ollama)
     ├── disable-password-auth.sh      # Legacy helper (enforces key-only SSH)
     └── setup-github-ssh.sh           # GitHub SSH key helper
 ```
